@@ -1,3 +1,11 @@
+This fork of LLVM contains a type-safe version of the OCaml bindings.
+
+To build:
+- Clone this repository, then git checkout release_33
+- Pass --enable-bindings=all to ./configure
+
+Documentation of these bindings will be added soon.
+
 Low Level Virtual Machine (LLVM)
 ================================
 
