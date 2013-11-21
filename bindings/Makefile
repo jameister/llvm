@@ -11,6 +11,6 @@ LEVEL := ..
 
 include $(LEVEL)/Makefile.config
 
-PARALLEL_DIRS = $(BINDINGS_TO_BUILD)
+DIRS = $(BINDINGS_TO_BUILD)
 
 include $(LEVEL)/Makefile.common
