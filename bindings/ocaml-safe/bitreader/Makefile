@@ -12,8 +12,8 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL := ../../..
-LIBRARYNAME := llvm_bitreader
+LIBRARYNAME := llvm_bitreader_safe
 UsedComponents := bitreader
-UsedOcamlInterfaces := llvm
+UsedOcamlInterfaces := llvm_safe
 
 include ../Makefile.ocaml

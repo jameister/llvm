@@ -25,7 +25,7 @@ module GenericValue: sig
   (** [of_float fpty n] boxes the float [n] in a float-valued generic value
       according to the floating point type [fpty]. See the fields
       [llvm::GenericValue::DoubleVal] and [llvm::GenericValue::FloatVal]. *)
-  val of_float : Llvm.lltype -> float -> t
+  val of_float : Llvm_safe.RealType.c -> float -> t
   
   (** [of_pointer v] boxes the pointer value [v] in a generic value. See the
       field [llvm::GenericValue::PointerVal]. *)
@@ -33,25 +33,24 @@ module GenericValue: sig
   
   (** [of_int32 n w] boxes the int32 [i] in a generic value with the bitwidth
       [w]. See the field [llvm::GenericValue::IntVal]. *)
-  val of_int32 : Llvm.lltype -> int32 -> t
+  val of_int32 : Llvm_safe.IntegerType.c -> int32 -> t
   
   (** [of_int n w] boxes the int [i] in a generic value with the bitwidth
       [w]. See the field [llvm::GenericValue::IntVal]. *)
-  val of_int : Llvm.lltype -> int -> t
+  val of_int : Llvm_safe.IntegerType.c -> int -> t
   
   (** [of_natint n w] boxes the native int [i] in a generic value with the
       bitwidth [w]. See the field [llvm::GenericValue::IntVal]. *)
-  val of_nativeint : Llvm.lltype -> nativeint -> t
-
+  val of_nativeint : Llvm_safe.IntegerType.c -> nativeint -> t
 
   (** [of_int64 n w] boxes the int64 [i] in a generic value with the bitwidth
       [w]. See the field [llvm::GenericValue::IntVal]. *)
-  val of_int64 : Llvm.lltype -> int64 -> t
+  val of_int64 : Llvm_safe.IntegerType.c -> int64 -> t
 
   (** [as_float fpty gv] unboxes the floating point-valued generic value [gv] of
       floating point type [fpty]. See the fields [llvm::GenericValue::DoubleVal]
       and [llvm::GenericValue::FloatVal]. *)
-  val as_float : Llvm.lltype -> t -> float
+  val as_float : Llvm_safe.RealType.c -> t -> float
   
   (** [as_pointer gv] unboxes the pointer-valued generic value [gv]. See the
       field [llvm::GenericValue::PointerVal]. *)
@@ -91,47 +90,44 @@ module ExecutionEngine: sig
       interpreter. Raises [Error msg] if an error occurrs. The execution engine
       is not garbage collected and must be destroyed with [dispose ee].
       See the function [llvm::EngineBuilder::create]. *)
-  val create : Llvm.llmodule -> t
+  val create : Llvm_safe.Module.t -> t
   
   (** [create_interpreter m] creates a new interpreter, taking ownership of the
       module [m] if successful. Raises [Error msg] if an error occurrs. The
       execution engine is not garbage collected and must be destroyed with
       [dispose ee].
       See the function [llvm::EngineBuilder::create]. *)
-  val create_interpreter : Llvm.llmodule -> t
+  val create_interpreter : Llvm_safe.Module.t -> t
   
   (** [create_jit m optlevel] creates a new JIT (just-in-time compiler), taking
       ownership of the module [m] if successful with the desired optimization
       level [optlevel]. Raises [Error msg] if an error occurrs. The execution
       engine is not garbage collected and must be destroyed with [dispose ee].
       See the function [llvm::EngineBuilder::create]. *)
-  val create_jit : Llvm.llmodule -> int -> t
+  val create_jit : Llvm_safe.Module.t -> int -> t
 
   (** [dispose ee] releases the memory used by the execution engine and must be
       invoked to avoid memory leaks. *)
   val dispose : t -> unit
   
   (** [add_module m ee] adds the module [m] to the execution engine [ee]. *)
-  val add_module : Llvm.llmodule -> t -> unit
+  val add_module : Llvm_safe.Module.t -> t -> unit
   
   (** [remove_module m ee] removes the module [m] from the execution engine
       [ee], disposing of [m] and the module referenced by [mp]. Raises
       [Error msg] if an error occurs. *)
-  val remove_module : Llvm.llmodule -> t -> Llvm.llmodule
+  val remove_module : Llvm_safe.Module.t -> t -> Llvm_safe.Module.t
 
-  
   (** [find_function n ee] finds the function named [n] defined in any of the
       modules owned by the execution engine [ee]. Returns [None] if the function
       is not found and [Some f] otherwise. *)
-  val find_function : string -> t -> Llvm.llvalue option
+  val find_function : string -> t -> Llvm_safe.Function.c option
 
-  
   (** [run_function f args ee] synchronously executes the function [f] with the
       arguments [args], which must be compatible with the parameter types. *)
-  val run_function : Llvm.llvalue -> GenericValue.t array -> t ->
-                     GenericValue.t
+  val run_function
+    : Llvm_safe.Function.c -> GenericValue.t array -> t -> GenericValue.t
 
-  
   (** [run_static_ctors ee] executes the static constructors of each module in
       the execution engine [ee]. *)
   val run_static_ctors : t -> unit
@@ -144,20 +140,18 @@ module ExecutionEngine: sig
       function, passing it [argv] and [argc] according to the string array
       [args], and [envp] as specified by the array [env]. Returns the integer
       return value of the function. *)
-  val run_function_as_main : Llvm.llvalue -> string array ->
-                                  (string * string) array -> t -> int
+  val run_function_as_main
+    : Llvm_safe.Function.c -> string array -> (string * string) array ->
+      t -> int
 
-  
   (** [free_machine_code f ee] releases the memory in the execution engine [ee]
       used to store the machine code for the function [f]. *)
-  val free_machine_code : Llvm.llvalue -> t -> unit
-
+  val free_machine_code : Llvm_safe.Function.c -> t -> unit
 
   (** [target_data ee] is the target data owned by the execution engine
       [ee]. *)
-  val target_data : t -> Llvm_target.DataLayout.t
+  val target_data : t -> Llvm_target_safe.DataLayout.t
 
 end
 
 val initialize_native_target : unit -> bool
-

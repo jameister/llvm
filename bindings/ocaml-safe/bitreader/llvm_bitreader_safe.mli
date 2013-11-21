@@ -18,11 +18,13 @@ exception Error of string
     memory buffer [mb] in the context [context].  Returns [m] if successful, or
     raises [Error msg] otherwise, where [msg] is a description of the error
     encountered. See the function [llvm::getBitcodeModule]. *)
-val get_module : Llvm.llcontext -> Llvm.llmemorybuffer -> Llvm.llmodule
+val get_module
+  : Llvm_safe.Context.t -> Llvm_safe.MemoryBuffer.t -> Llvm_safe.Module.t
 
 
 (** [parse_bitcode context mb] parses the bitcode for a new module [m] from the
     memory buffer [mb] in the context [context]. Returns [m] if successful, or
     raises [Error msg] otherwise, where [msg] is a description of the error
     encountered. See the function [llvm::ParseBitcodeFile]. *)
-val parse_bitcode : Llvm.llcontext -> Llvm.llmemorybuffer -> Llvm.llmodule
+val parse_bitcode
+  : Llvm_safe.Context.t -> Llvm_safe.MemoryBuffer.t -> Llvm_safe.Module.t

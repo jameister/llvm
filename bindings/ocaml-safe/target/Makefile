@@ -12,8 +12,8 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL := ../../..
-LIBRARYNAME := llvm_target
+LIBRARYNAME := llvm_target_safe
 UsedComponents := target
-UsedOcamlInterfaces := llvm
+UsedOcamlInterfaces := llvm_safe
 
 include ../Makefile.ocaml

@@ -14,12 +14,13 @@
 
 
 (* Writes the bitcode for module the given path. Returns true if successful. *)
-external write_bitcode_file : Llvm.llmodule -> string -> bool
-                            = "llvm_write_bitcode_file"
+external write_bitcode_file
+  : Llvm_safe.Module.t -> string -> bool
+  = "llvm_write_bitcode_file"
 
-external write_bitcode_to_fd : ?unbuffered:bool -> Llvm.llmodule
-                               -> Unix.file_descr -> bool
-                             = "llvm_write_bitcode_to_fd"
+external write_bitcode_to_fd
+  : ?unbuffered:bool -> Llvm_safe.Module.t -> Unix.file_descr -> bool
+  = "llvm_write_bitcode_to_fd"
 
 let output_bitcode ?unbuffered channel m =
   write_bitcode_to_fd ?unbuffered m (Unix.descr_of_out_channel channel)

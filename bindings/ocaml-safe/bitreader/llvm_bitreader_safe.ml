@@ -13,8 +13,10 @@ exception Error of string
 external register_exns : exn -> unit = "llvm_register_bitreader_exns"
 let _ = register_exns (Error "")
 
-external get_module : Llvm.llcontext -> Llvm.llmemorybuffer -> Llvm.llmodule
-                    = "llvm_get_module"
+external get_module
+  : Llvm_safe.Context.t -> Llvm_safe.MemoryBuffer.t -> Llvm_safe.Module.t
+  = "llvm_get_module"
 
-external parse_bitcode : Llvm.llcontext -> Llvm.llmemorybuffer -> Llvm.llmodule
-                       = "llvm_parse_bitcode"
+external parse_bitcode
+  : Llvm_safe.Context.t -> Llvm_safe.MemoryBuffer.t -> Llvm_safe.Module.t
+  = "llvm_parse_bitcode"

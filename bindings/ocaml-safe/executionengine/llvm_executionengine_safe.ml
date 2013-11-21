@@ -10,80 +10,107 @@
 
 exception Error of string
 
-external register_exns: exn -> unit
-  = "llvm_register_ee_exns"
+external register_exns : exn -> unit = "llvm_register_ee_exns"
+let _ = register_exns (Error "")
 
+let maybe f = function
+  | None -> None
+  | Some x -> Some (f x)
 
 module GenericValue = struct
   type t
   
-  external of_float: Llvm.lltype -> float -> t
+  external of_float
+    : Llvm_safe.Type.t -> float -> t
     = "llvm_genericvalue_of_float"
-  external of_pointer: 'a -> t
+  external of_pointer
+    : 'a -> t
     = "llvm_genericvalue_of_pointer"
-  external of_int32: Llvm.lltype -> int32 -> t
+  external of_int32
+    : Llvm_safe.Type.t -> int32 -> t
     = "llvm_genericvalue_of_int32"
-  external of_int: Llvm.lltype -> int -> t
+  external of_int
+    : Llvm_safe.Type.t -> int -> t
     = "llvm_genericvalue_of_int"
-  external of_nativeint: Llvm.lltype -> nativeint -> t
+  external of_nativeint
+    : Llvm_safe.Type.t -> nativeint -> t
     = "llvm_genericvalue_of_nativeint"
-  external of_int64: Llvm.lltype -> int64 -> t
+  external of_int64
+    : Llvm_safe.Type.t -> int64 -> t
     = "llvm_genericvalue_of_int64"
+  let of_float fty n = of_float fty#ptr n
+  let of_int32 ity n = of_int32 ity#ptr n
+  let of_int ity n = of_int ity#ptr n
+  let of_nativeint ity n = of_nativeint ity#ptr n
+  let of_int64 ity n = of_int64 ity#ptr n
   
-  external as_float: Llvm.lltype -> t -> float
+  external as_float
+    : Llvm_safe.Type.t -> t -> float
     = "llvm_genericvalue_as_float"
-  external as_pointer: t -> 'a
+  external as_pointer
+    : t -> 'a
     = "llvm_genericvalue_as_pointer"
-  external as_int32: t -> int32
+  external as_int32
+    : t -> int32
     = "llvm_genericvalue_as_int32"
-  external as_int: t -> int
+  external as_int
+    : t -> int
     = "llvm_genericvalue_as_int"
-  external as_nativeint: t -> nativeint
+  external as_nativeint
+    : t -> nativeint
     = "llvm_genericvalue_as_nativeint"
-  external as_int64: t -> int64
+  external as_int64
+    : t -> int64
     = "llvm_genericvalue_as_int64"
+  let as_float fty gv = as_float fty#ptr gv
 end
-
 
 module ExecutionEngine = struct
   type t
   
-  (* FIXME: Ocaml is not running this setup code unless we use 'val' in the
-            interface, which causes the emission of a stub for each function;
-            using 'external' in the module allows direct calls into 
-            ocaml_executionengine.c. This is hardly fatal, but it is unnecessary
-            overhead on top of the two stubs that are already invoked for each 
-            call into LLVM. *)
-  let _ = register_exns (Error "")
-  
-  external create: Llvm.llmodule -> t
+  external create
+    : Llvm_safe.Module.t -> t
     = "llvm_ee_create"
-  external create_interpreter: Llvm.llmodule -> t
+  external create_interpreter
+    : Llvm_safe.Module.t -> t
     = "llvm_ee_create_interpreter"
-  external create_jit: Llvm.llmodule -> int -> t
+  external create_jit
+    : Llvm_safe.Module.t -> int -> t
     = "llvm_ee_create_jit"
-  external dispose: t -> unit
+  external dispose
+    : t -> unit
     = "llvm_ee_dispose"
-  external add_module: Llvm.llmodule -> t -> unit
+  external add_module
+    : Llvm_safe.Module.t -> t -> unit
     = "llvm_ee_add_module"
-  external remove_module: Llvm.llmodule -> t -> Llvm.llmodule
+  external remove_module
+    : Llvm_safe.Module.t -> t -> Llvm_safe.Module.t
     = "llvm_ee_remove_module"
-  external find_function: string -> t -> Llvm.llvalue option
+  external find_function
+    : string -> t -> Llvm_safe.Function.t option
     = "llvm_ee_find_function"
-  external run_function: Llvm.llvalue -> GenericValue.t array -> t ->
-                         GenericValue.t
+  external run_function
+    : Llvm_safe.Value.t -> GenericValue.t array -> t -> GenericValue.t
     = "llvm_ee_run_function"
-  external run_static_ctors: t -> unit
+  external run_static_ctors
+    : t -> unit
     = "llvm_ee_run_static_ctors"
-  external run_static_dtors: t -> unit
+  external run_static_dtors
+    : t -> unit
     = "llvm_ee_run_static_dtors"
-  external run_function_as_main: Llvm.llvalue -> string array ->
-                                 (string * string) array -> t -> int
+  external run_function_as_main
+    : Llvm_safe.Value.t -> string array -> (string * string) array -> t -> int
     = "llvm_ee_run_function_as_main"
-  external free_machine_code: Llvm.llvalue -> t -> unit
+  external free_machine_code: Llvm_safe.Value.t -> t -> unit
     = "llvm_ee_free_machine_code"
+  let find_function name ee =
+    maybe (new Llvm_safe.Function.c) (find_function name ee)
+  let run_function f = run_function f#ptr
+  let run_function_as_main f = run_function_as_main f#ptr
+  let free_machine_code f = free_machine_code f#ptr
 
-  external target_data: t -> Llvm_target.DataLayout.t
+  external target_data
+    : t -> Llvm_target_safe.DataLayout.t
     = "LLVMGetExecutionEngineTargetData"
   
   (* The following are not bound. Patches are welcome.
@@ -108,5 +135,6 @@ module ExecutionEngine = struct
    *)
 end
 
-external initialize_native_target : unit -> bool
-                                  = "llvm_initialize_native_target"
+external initialize_native_target
+  : unit -> bool
+  = "llvm_initialize_native_target"

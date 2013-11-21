@@ -12,8 +12,8 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL := ../../..
-LIBRARYNAME := llvm_executionengine
+LIBRARYNAME := llvm_executionengine_safe
 UsedComponents := executionengine jit interpreter native
-UsedOcamlInterfaces := llvm llvm_target
+UsedOcamlInterfaces := llvm_safe llvm_target_safe
 
 include ../Makefile.ocaml

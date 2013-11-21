@@ -12,7 +12,7 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL := ../../..
-LIBRARYNAME := llvm-safe
+LIBRARYNAME := llvm_safe
 UsedOcamLibs := llvm
 
 include ../Makefile.ocaml

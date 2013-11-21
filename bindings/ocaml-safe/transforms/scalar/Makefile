@@ -12,9 +12,9 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL := ../../../..
-LIBRARYNAME := llvm_scalar_opts
+LIBRARYNAME := llvm_scalar_opts_safe
 DONT_BUILD_RELINKED := 1
 UsedComponents := scalaropts
-UsedOcamlInterfaces := llvm
+UsedOcamlInterfaces := llvm_safe
 
 include ../../Makefile.ocaml

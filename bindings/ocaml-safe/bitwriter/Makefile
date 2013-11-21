@@ -12,8 +12,8 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL := ../../..
-LIBRARYNAME := llvm_bitwriter
+LIBRARYNAME := llvm_bitwriter_safe
 UsedComponents := bitwriter
-UsedOcamlInterfaces := llvm
+UsedOcamlInterfaces := llvm_safe
 
 include ../Makefile.ocaml

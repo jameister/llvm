@@ -14,17 +14,16 @@
 
 (** [write_bitcode_file m path] writes the bitcode for module [m] to the file at
     [path]. Returns [true] if successful, [false] otherwise. *)
-external write_bitcode_file : Llvm.llmodule -> string -> bool
-                            = "llvm_write_bitcode_file"
+val write_bitcode_file : Llvm_safe.Module.t -> string -> bool
 
 (** [write_bitcode_to_fd ~unbuffered fd m] writes the bitcode for module
     [m] to the channel [c]. If [unbuffered] is [true], after every write the fd
     will be flushed. Returns [true] if successful, [false] otherwise. *)
-external write_bitcode_to_fd : ?unbuffered:bool -> Llvm.llmodule
-                               -> Unix.file_descr -> bool
-                             = "llvm_write_bitcode_to_fd"
+val write_bitcode_to_fd
+  : ?unbuffered:bool -> Llvm_safe.Module.t -> Unix.file_descr -> bool
 
 (** [output_bitcode ~unbuffered c m] writes the bitcode for module [m]
     to the channel [c]. If [unbuffered] is [true], after every write the fd
     will be flushed. Returns [true] if successful, [false] otherwise. *)
-val output_bitcode : ?unbuffered:bool -> out_channel -> Llvm.llmodule -> bool
+val output_bitcode
+  : ?unbuffered:bool -> out_channel -> Llvm_safe.Module.t -> bool

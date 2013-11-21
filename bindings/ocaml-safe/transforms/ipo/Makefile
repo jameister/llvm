@@ -12,9 +12,9 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL := ../../../..
-LIBRARYNAME := llvm_ipo
+LIBRARYNAME := llvm_ipo_safe
 DONT_BUILD_RELINKED := 1
 UsedComponents := ipo
-UsedOcamlInterfaces := llvm
+UsedOcamlInterfaces := llvm_safe
 
 include ../../Makefile.ocaml
