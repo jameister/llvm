@@ -1,4 +1,5 @@
-name = "llvm"
+name = "llvm_safe"
+requires = "llvm"
 version = "@PACKAGE_VERSION@"
 description = "LLVM OCaml bindings"
 archive(byte) = "llvm_safe.cma"
@@ -7,7 +8,7 @@ directory = "."
 linkopts = "-ccopt -lstdc++"
 
 package "analysis" (
-    requires = "llvm"
+    requires = "llvm_safe"
     version = "@PACKAGE_VERSION@"
     description = "Intermediate representation analysis for LLVM"
     archive(byte) = "llvm_analysis_safe.cma"
@@ -15,7 +16,7 @@ package "analysis" (
 )
 
 package "bitreader" (
-    requires = "llvm"
+    requires = "llvm_safe"
     version  = "@PACKAGE_VERSION@"
     description = "Bitcode reader for LLVM"
     archive(byte) = "llvm_bitreader_safe.cma"
@@ -23,7 +24,7 @@ package "bitreader" (
 )
 
 package "bitwriter" (
-    requires = "llvm,unix"
+    requires = "llvm_safe,unix"
     version = "@PACKAGE_VERSION@"
     description = "Bitcode writer for LLVM"
     archive(byte) = "llvm_bitwriter_safe.cma"
@@ -31,7 +32,7 @@ package "bitwriter" (
 )
 
 package "executionengine" (
-    requires = "llvm,llvm.target"
+    requires = "llvm_safe,llvm.target"
     version = "@PACKAGE_VERSION@"
     description = "JIT and Interpreter for LLVM"
     archive(byte) = "llvm_executionengine_safe.cma"
@@ -39,7 +40,7 @@ package "executionengine" (
 )
 
 package "ipo" (
-    requires = "llvm"
+    requires = "llvm_safe"
     version  = "@PACKAGE_VERSION@"
     description = "IPO Transforms for LLVM"
     archive(byte) = "llvm_ipo_safe.cma"
@@ -47,7 +48,7 @@ package "ipo" (
 )
 
 package "scalar_opts" (
-    requires = "llvm"
+    requires = "llvm_safe"
     version = "@PACKAGE_VERSION@"
     description = "Scalar Transforms for LLVM"
     archive(byte) = "llvm_scalar_opts_safe.cma"
@@ -55,7 +56,7 @@ package "scalar_opts" (
 )
 
 package "target" (
-    requires = "llvm"
+    requires = "llvm_safe"
     version  = "@PACKAGE_VERSION@"
     description = "Target Information for LLVM"
     archive(byte) = "llvm_target_safe.cma"
