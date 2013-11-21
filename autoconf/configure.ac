@@ -964,7 +964,7 @@ AC_ARG_ENABLE([bindings],AS_HELP_STRING([--enable-bindings],
 BINDINGS_TO_BUILD=""
 case "$enableval" in
   yes | default | auto) BINDINGS_TO_BUILD="auto" ;;
-  all ) BINDINGS_TO_BUILD="ocaml ocaml-safe" ;;
+  all ) BINDINGS_TO_BUILD="ocaml ocaml_safe" ;;
   none | no) BINDINGS_TO_BUILD="" ;;
   *)for a_binding in `echo $enableval|sed -e 's/,/ /g' ` ; do
       case "$a_binding" in

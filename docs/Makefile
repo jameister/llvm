@@ -37,7 +37,7 @@ ifeq ($(ENABLE_DOXYGEN),1)
 install_targets += install-doxygen
 endif
 ifdef OCAMLDOC
-ifneq (,$(filter ocaml ocaml-safe,$(BINDINGS_TO_BUILD)))
+ifneq (,$(filter ocaml ocaml_safe,$(BINDINGS_TO_BUILD)))
 install_targets += install-ocamldoc
 endif
 endif

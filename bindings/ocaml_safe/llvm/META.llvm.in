@@ -1,8 +1,8 @@
 name = "llvm"
 version = "@PACKAGE_VERSION@"
 description = "LLVM OCaml bindings"
-archive(byte) = "llvm.cma"
-archive(native) = "llvm.cmxa"
+archive(byte) = "llvm_safe.cma"
+archive(native) = "llvm_safe.cmxa"
 directory = "."
 linkopts = "-ccopt -lstdc++"
 
@@ -10,54 +10,54 @@ package "analysis" (
     requires = "llvm"
     version = "@PACKAGE_VERSION@"
     description = "Intermediate representation analysis for LLVM"
-    archive(byte) = "llvm_analysis.cma"
-    archive(native) = "llvm_analysis.cmxa"
+    archive(byte) = "llvm_analysis_safe.cma"
+    archive(native) = "llvm_analysis_safe.cmxa"
 )
 
 package "bitreader" (
     requires = "llvm"
     version  = "@PACKAGE_VERSION@"
     description = "Bitcode reader for LLVM"
-    archive(byte) = "llvm_bitreader.cma"
-    archive(native) = "llvm_bitreader.cmxa"
+    archive(byte) = "llvm_bitreader_safe.cma"
+    archive(native) = "llvm_bitreader_safe.cmxa"
 )
 
 package "bitwriter" (
     requires = "llvm,unix"
     version = "@PACKAGE_VERSION@"
     description = "Bitcode writer for LLVM"
-    archive(byte) = "llvm_bitwriter.cma"
-    archive(native) = "llvm_bitwriter.cmxa"
+    archive(byte) = "llvm_bitwriter_safe.cma"
+    archive(native) = "llvm_bitwriter_safe.cmxa"
 )
 
 package "executionengine" (
     requires = "llvm,llvm.target"
     version = "@PACKAGE_VERSION@"
     description = "JIT and Interpreter for LLVM"
-    archive(byte) = "llvm_executionengine.cma"
-    archive(native) = "llvm_executionengine.cmxa"
+    archive(byte) = "llvm_executionengine_safe.cma"
+    archive(native) = "llvm_executionengine_safe.cmxa"
 )
 
 package "ipo" (
     requires = "llvm"
     version  = "@PACKAGE_VERSION@"
     description = "IPO Transforms for LLVM"
-    archive(byte) = "llvm_ipo.cma"
-    archive(native) = "llvm_ipo.cmxa"
+    archive(byte) = "llvm_ipo_safe.cma"
+    archive(native) = "llvm_ipo_safe.cmxa"
 )
 
 package "scalar_opts" (
     requires = "llvm"
     version = "@PACKAGE_VERSION@"
     description = "Scalar Transforms for LLVM"
-    archive(byte) = "llvm_scalar_opts.cma"
-    archive(native) = "llvm_scalar_opts.cmxa"
+    archive(byte) = "llvm_scalar_opts_safe.cma"
+    archive(native) = "llvm_scalar_opts_safe.cmxa"
 )
 
 package "target" (
     requires = "llvm"
     version  = "@PACKAGE_VERSION@"
     description = "Target Information for LLVM"
-    archive(byte) = "llvm_target.cma"
-    archive(native) = "llvm_target.cmxa"
+    archive(byte) = "llvm_target_safe.cma"
+    archive(native) = "llvm_target_safe.cmxa"
 )
