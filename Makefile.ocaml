@@ -1,0 +1,24 @@
+# I don't know enough about the LLVM Makefile structure to integrate this...
+# Not sure I want to know either.
+
+# CHANGE THIS TO THE NAME OF THE DIRECTORY CONTAINING YOUR BUILD OUTPUT
+BUILD_TYPE = "Release+Asserts"
+
+COMPILER_LIBS = ocamlcommon.cma ocamlbytecomp.cma ocamltoplevel.cma unix.cma
+
+LLVM_LIBS = llvm.cma llvm_safe.cma llvm_analysis_safe.cma \
+            llvm_bitreader_safe.cma llvm_executionengine_safe.cma \
+	    llvm_target_safe.cma llvm_scalar_opts_safe.cma
+
+all:
+	ocamlc -custom -cc 'g++ -m64' \
+	  -I +compiler-libs -I $(BUILD_TYPE)/lib/ocaml \
+	  -ccopt -L$(BUILD_TYPE)/lib/ocaml \
+	  -linkall $(COMPILER_LIBS) $(LLVM_LIBS) topstart.cmo \
+	  -o llvmtop
+	echo "#!/bin/sh" >ocamllvm
+	echo "exec ./llvmtop -I $(BUILD_TYPE)/lib/ocaml" >>ocamllvm
+	chmod a+x ocamllvm
+
+clean:
+	rm -f llvmtop ocamllvm
