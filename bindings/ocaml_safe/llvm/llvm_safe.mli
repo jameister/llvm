@@ -12,117 +12,128 @@
     This interface provides an OCaml API for the LLVM intermediate
     representation, the classes in the VMCore library.
 
-    Unlike the default bindings that expose LLVM's unsafe C interface,
-    these bindings re-establish the subtype hierarchy of LLVM's C++ code,
-    using the advanced object and module systems available in OCaml.
-*)
-
-
-(*
-(* TODO remove start *)
-(** {6 Abstract types}
-
-    These abstract types correlate directly to the LLVM VMCore classes. *)
-
-(** A basic block in LLVM IR. See the [llvm::BasicBlock] class. *)
-type llbasicblock
-
-(** Used to generate instructions in the LLVM IR. See the [llvm::LLVMBuilder]
-    class. *)
-type llbuilder
-
-(** Used to efficiently handle large buffers of read-only binary data.
-    See the [llvm::MemoryBuffer] class. *)
-type llmemorybuffer
-(* TODO remove end *)
+    Unlike the default bindings that expose LLVM's unsafe C interface, these
+    bindings re-establish the subtype hierarchy of LLVM's C++ code, using the
+    advanced object and module systems available in OCaml.
 *)
 
 
 (** {6 Iteration} *)
 
+(** {7 C++ style iteration with [pos] and [rev_pos]} *)
+
 (** [Before b] and [At_end a] specify positions from the start of the ['b] list
     of ['a]. [pos] is used to specify positions in and for forward iteration
     through the various value lists maintained by the LLVM IR. *)
-type ('a, 'b) pos = ('a, 'b) Llvm.llpos
+type ('a, 'b) pos = ('a, 'b) Llvm.llpos = At_end of 'a | Before of 'b
 
 (** [After b] and [At_start a] specify positions from the end of the ['b] list
     of ['a]. [rev_pos] is used for reverse iteration through the various value
     lists maintained by the LLVM IR. *)
-type ('a, 'b) rev_pos = ('a, 'b) Llvm.llrev_pos
+type ('a, 'b) rev_pos = ('a, 'b) Llvm.llrev_pos = At_start of 'a | After of 'b
 
-(** Input signature of the functor [Iterable] *)
-module type POSITION = sig
-  type collection
-  type item
-  val first : collection -> (collection, item) pos
-  val last  : collection -> (collection, item) rev_pos
-  val succ  : item -> (collection, item) pos
-  val pred  : item -> (collection, item) rev_pos
-end
+(** {7 Higher order functional iterators} *)
 
-(** Given a module P with position functions over [(collection, item) pos] and
-    [(collection, item) rev_pos], generate higher order functional iterators.
+(** Given a module with position functions over [(collection, item) pos] and
+    [(collection, item) rev_pos], there are also the more convenient
+    functional iterators: [iter], [rev_iter], [fold_left], and [fold_right].
 
-    This functor is called to produce traversals of:
-    - Global variables in a module
-    - Functions in a module
-    - Arguments in a function
-    - Basic blocks in a function
-    - Instructions in a basic block
+    These functions can be used to traverse:
+    - Global variables in a module: see {!GlobalVariable}
+    - Functions in a module: see {!Function}
+    - Arguments in a function: see {!Argument}
+    - Basic blocks in a function: see {!BasicBlock}
+    - Instructions in a basic block: see {!Instruction}
 
-    The convention here is: for iterators over [Foo.c] items in some collection,
-    look in module [Foo]. *)
-module Iterable(P : POSITION) : sig
-  type collection = P.collection
-  type item = P.item
-  val iter       : collection -> (item -> unit) -> unit
-  val rev_iter   : collection -> (item -> unit) -> unit
-  val fold_left  : 'a -> collection -> ('a -> item -> 'a) -> 'a
-  val fold_right : collection -> 'a -> (item -> 'a -> 'a) -> 'a
-end
+    The convention here is: for iterators over [Foo.c] items in some
+    collection, look in module [Foo]. *)
 
 
 (** {6 Exceptions} *)
 
+(** Raised when creation of a {!MemoryBuffer} fails *)
 exception IoError of string
 
-(** Thrown by the [from] functions if downcasting their argument would fail *)
+(** Raised by the [from] functions if downcasting their argument would fail *)
 exception Cast_failure of string
 
 
 (** {6 Enumerations} *)
 
-(** The opcodes for LLVM instructions and constant expressions. *)
+(** The opcodes for LLVM instructions and constant expressions *)
 module Opcode : sig
   type t = Llvm.Opcode.t =
     | Invalid (** Not an instruction *)
 
-    | Ret | Br | Switch | IndirectBr | Invoke | Invalid2 | Unreachable
-      (** Terminator instructions *)
+    | Ret (** Terminator instructions *)
+    | Br
+    | Switch
+    | IndirectBr
+    | Invoke
+    | Invalid2
+    | Unreachable
 
-    | Add | FAdd | Sub | FSub | Mul | FMul
-    | UDiv | SDiv | FDiv | URem | SRem | FRem
-      (** Standard binary operators *)
+    | Add (** Standard binary operators *)
+    | FAdd
+    | Sub
+    | FSub
+    | Mul
+    | FMul
+    | UDiv
+    | SDiv
+    | FDiv
+    | URem
+    | SRem
+    | FRem
 
-    | Shl | LShr | AShr | And | Or | Xor
-      (** Logical operators *)
+    | Shl (** Logical operators *)
+    | LShr
+    | AShr
+    | And
+    | Or
+    | Xor
 
-    | Alloca | Load | Store | GetElementPtr
-      (** Memory operators *)
+    | Alloca (** Memory operators *)
+    | Load
+    | Store
+    | GetElementPtr
 
-    | Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP
-    | FPTrunc | FPExt | PtrToInt | IntToPtr | BitCast
-      (** Cast operators *)
+    | Trunc (** Cast operators *)
+    | ZExt
+    | SExt
+    | FPToUI
+    | FPToSI
+    | UIToFP
+    | SIToFP
+    | FPTrunc
+    | FPExt
+    | PtrToInt
+    | IntToPtr
+    | BitCast
 
-    | ICmp | FCmp | PHI | Call | Select | UserOp1 | UserOp2 | VAArg
-    | ExtractElement | InsertElement | ShuffleVector
-    | ExtractValue | InsertValue | Fence | AtomicCmpXchg
-    | AtomicRMW | Resume | LandingPad | Unwind
-      (** Other operators *)
+    | ICmp (** Other operators *)
+    | FCmp
+    | PHI
+    | Call
+    | Select
+    | UserOp1
+    | UserOp2
+    | VAArg
+    | ExtractElement
+    | InsertElement
+    | ShuffleVector
+    | ExtractValue
+    | InsertValue
+    | Fence
+    | AtomicCmpXchg
+    | AtomicRMW
+    | Resume
+    | LandingPad
+    | Unwind
 end
 
 (** The various operators available when constructing unary/binary/cast
-    instructions or constant expressions through this interface. *)
+    instructions or constant expressions through this interface *)
 module Operator : sig
   type unary =
     | Neg (** Arithmetic negation *)
@@ -183,19 +194,44 @@ module Operator : sig
     | PointerCast | IntCast | FPCast
 end
 
+(** Comparison predicates for [icmp] and [fcmp] instructions *)
 module Predicate : sig
-  (** The predicate for an integer comparison ([icmp]) instruction.
-      See the [llvm::ICmpInst::Predicate] enumeration. *)
+  (** The predicate for an integer comparison ([icmp]) instruction. See the
+      [llvm::ICmpInst::Predicate] enumeration. *)
   type icmp =
-    | Eq | Ne | Ugt | Uge | Ult | Ule | Sgt | Sge | Slt | Sle
+    | Eq (** Equal *)
+    | Ne (** Not equal *)
+    | Ugt (** Unsigned greater than *)
+    | Uge (** Unsigned greater or equal *)
+    | Ult (** Unsigned less than *)
+    | Ule (** Unsigned less or equal *)
+    | Sgt (** Signed greater than *)
+    | Sge (** Signed greater or equal *)
+    | Slt (** Signed less than *)
+    | Sle (** Signed less or equal *)
 
-  (** The predicate for a floating-point comparison ([fcmp]) instruction.
-      See the [llvm::FCmpInst::Predicate] enumeration. *)
+  (** The predicate for a floating-point comparison ([fcmp]) instruction. See
+      the [llvm::FCmpInst::Predicate] enumeration. *)
   type fcmp =
-    | False | Oeq | Ogt | Oge | Olt | Ole | One | Ord
-    | Uno | Ueq | Ugt | Uge | Ult | Ule | Une | True
+    | False (** Always false (always folded) *)
+    | Oeq (** True if ordered and equal *)
+    | Ogt (** True if ordered and greater than *)
+    | Oge (** True if ordered and greater than or equal *)
+    | Olt (** True if ordered and less than *)
+    | Ole (** True if ordered and less than or equal *)
+    | One (** True if ordered and operands are unequal *)
+    | Ord (** True if ordered (no NaNs) *)
+    | Uno (** True if unordered: isNaN(X) | isNaN(Y) *)
+    | Ueq (** True if unordered or equal *)
+    | Ugt (** True if unordered or greater than *)
+    | Uge (** True if unordered, greater than, or equal *)
+    | Ult (** True if unordered or less than *)
+    | Ule (** True if unordered, less than, or equal *)
+    | Une (** True if unordered or not equal *)
+    | True (** Always true (always folded) *)
 end
 
+(** Attributes of functions and their arguments *)
 module Attribute : sig
   type t =
     | Zext | Sext | Noreturn | Inreg | Structret | Nounwind | Noalias | Byval
@@ -208,35 +244,50 @@ module Attribute : sig
 end
 
 
-(** {6 Contexts} *)
+(** {6 LLVM Contexts} *)
 
 (** The top-level container for all LLVM global data. See the
     [llvm::LLVMContext] class. *)
 module Context : sig
   type t
 
-  (** [create_context ()] creates a context for storing the "global" state in
+  (** [Context.create ()] creates a context for storing the "global" state in
       LLVM. See the constructor [llvm::LLVMContext]. *)
   val create : unit -> t
 
-  (** [destroy_context ()] destroys a context. See the destructor
+  (** [Context.destroy ctx] destroys a context. See the destructor
       [llvm::LLVMContext::~LLVMContext]. *)
   val dispose : t -> unit
 
   (** See the function [llvm::getGlobalContext]. *)
   val global : unit -> t
 
-  (** [mdkind_id context name] returns the MDKind ID that corresponds to the
-      name [name] in the context [context].  See the function
+  (** [Context.mdkind_id ctx name] returns the MDKind ID that corresponds to
+      the name [name] in the context [ctx]. See the function
       [llvm::LLVMContext::getMDKindID]. *)
   val mdkind_id : t -> string -> int
 end
 
 
-(** {6 Types} *)
+(** {6 LLVM Types} *)
 
-(** Each value in the LLVM IR has a type, an instance of [Type.c]. See the
-    [llvm::Type] class. *)
+(**
+  Inheritance hierarchy of Type subclasses:
+
+  {v
+  Type
+  | IntegerType
+  | FunctionType
+  | StructType
+  | SequentialType
+    | ArrayType
+    | PointerType
+    | VectorType
+  v}
+*)
+
+(** Each {!Value.c} in the LLVM IR has a type, an instance of {!Type.c}. See
+    the [llvm::Type] class. *)
 module Type : sig
   type t
 
@@ -249,165 +300,102 @@ module Type : sig
   class c : t -> object
     method ptr : t
 
-    (** [ty#classify] returns the kind corresponding to the type [ty]. See
-        the method [llvm::Type::getTypeID]. *)
+    (** [ty#classify] returns the kind corresponding to the type [ty]. See the
+        method [llvm::Type::getTypeID]. *)
     method classify : kind
 
     (** [ty#is_sized] returns whether the type has a size or not. If it doesn't
         then it is not safe to call the [DataLayout::] methods on it. *)
     method is_sized : bool
 
-    (** [ty#context] returns the {Context.t} corresponding to the type [ty].
+    (** [ty#context] returns the {!Context.t} corresponding to the type [ty].
         See the method [llvm::Type::getContext]. *)
     method context : Context.t
 
     (** [ty#to_string] returns a string describing the type [ty]. *)
     method to_string : string
   end
+
+  (** [Type.void c] creates a type of a function which does not return any
+      value in the context [c]. See [llvm::Type::VoidTy]. *)
+  val void : Context.t -> c
+ 
+  (* TODO Half, Metadata *)
+
+  (** [Type.float c] returns the IEEE 32-bit floating point type in the context
+      [c]. See [llvm::Type::FloatTy]. *)
+  val float : Context.t -> c
+
+  (** [Type.double c] returns the IEEE 64-bit floating point type in the
+      context [c]. See [llvm::Type::DoubleTy]. *)
+  val double : Context.t -> c
+
+  (** [Type.x86fp80 c] returns the x87 80-bit floating point type in the
+      context [c]. See [llvm::Type::X86_FP80Ty]. *)
+  val x86fp80 : Context.t -> c
+
+  (** [Type.fp128 c] returns the IEEE 128-bit floating point type in the
+      context [c]. See [llvm::Type::FP128Ty]. *)
+  val fp128 : Context.t -> c
+
+  (** [Type.ppc_fp128 c] returns the PowerPC 128-bit floating point type in the
+      context [c]. See [llvm::Type::PPC_FP128Ty]. *)
+  val ppc_fp128 : Context.t -> c
+
+  (** [Type.label c] creates a type of a basic block in the context [c]. See
+      [llvm::Type::LabelTy]. *)
+  val label : Context.t -> c
 end
 
+(**
 
-(** {7 Operations on integer types} *)
+*)
 
+(** Methods of integer types: {!IntegerType.c} *)
 module IntegerType : sig
   type t
   class c : t -> object
     inherit Type.c
     
-    (** [ty#integer_bitwidth] returns the number of bits in the integer type
-        [ty]. See the method [llvm::IntegerType::getBitWidth]. *)
+    (** [ity#bitwidth] returns the number of bits in the integer type [ty]. See
+        the method [llvm::IntegerType::getBitWidth]. *)
     method bitwidth : int
   end
 
-  (** [Type.i1 c] returns an integer type of bitwidth 1 in the context [c]. See
-      [llvm::Type::Int1Ty]. *)
+  (** [IntegerType.i1 c] returns an integer type of bitwidth 1 in the context
+      [c]. See [llvm::Type::Int1Ty]. *)
   val i1 : Context.t -> c
 
-  (** [Type.i8 c] returns an integer type of bitwidth 8 in the context [c]. See
-      [llvm::Type::Int8Ty]. *)
+  (** [IntegerType.i8 c] returns an integer type of bitwidth 8 in the context
+      [c]. See [llvm::Type::Int8Ty]. *)
   val i8 : Context.t -> c
 
-  (** [Type.i16 c] returns an integer type of bitwidth 16 in the context [c]. See
-      [llvm::Type::Int16Ty]. *)
+  (** [IntegerType.i16 c] returns an integer type of bitwidth 16 in the context
+      [c]. See [llvm::Type::Int16Ty]. *)
   val i16 : Context.t -> c
 
-  (** [Type.i32 c] returns an integer type of bitwidth 32 in the context [c]. See
-      [llvm::Type::Int32Ty]. *)
+  (** [IntegerType.i32 c] returns an integer type of bitwidth 32 in the context
+      [c]. See [llvm::Type::Int32Ty]. *)
   val i32 : Context.t -> c
 
-  (** [Type.i64 c] returns an integer type of bitwidth 64 in the context [c]. See
-      [llvm::Type::Int64Ty]. *)
+  (** [IntegerType.i64 c] returns an integer type of bitwidth 64 in the context
+      [c]. See [llvm::Type::Int64Ty]. *)
   val i64 : Context.t -> c
 
-  (** [Type.make c n] returns an integer type of bitwidth [n] in the context
-      [c]. See the method [llvm::IntegerType::get]. *)
+  (** [IntegerType.make c n] returns an integer type of bitwidth [n] in the
+      context [c]. See the method [llvm::IntegerType::get]. *)
   val make : Context.t -> bits:int -> c
 
-  (** [IntegerType.test ty] checks whether the {Type.c} [ty] can be safely
+  (** [IntegerType.test ty] checks whether the {!Type.c} [ty] can be safely
       downcast to [IntegerType.c]. *)
   val test : Type.c -> bool
 
-  (** [IntegerType.from ty] performs a checked downcast of the {Type.c} [ty] to
-      [IntegerType.c]. *)
+  (** [IntegerType.from ty] performs a checked downcast of the {!Type.c} [ty]
+      to [IntegerType.c]. *)
   val from : Type.c -> c
 end
 
-
-(** {7 Operations on real types} *)
-
-module RealType : sig
-  type t
-  class c : t -> object inherit Type.c end
-end
-
-module FloatType : sig
-  type t
-  class c : t -> object inherit RealType.c end
-
-  (** [FloatType.make c] returns the IEEE 32-bit floating point type in the
-      context [c]. See [llvm::Type::FloatTy]. *)
-  val make : Context.t -> c
-
-  (** [FloatType.test ty] checks whether the {Type.c} [ty] can be safely
-      downcast to [FloatType.c]. *)
-  val test : Type.c -> bool
-
-  (** [FloatType.from ty] performs a checked downcast of the {Type.c} [ty] to
-      [FloatType.c]. *)
-  val from : Type.c -> c
-end
-
-module DoubleType : sig
-  type t
-  class c : t -> object inherit RealType.c end
-
-  (** [DoubleType.make c] returns the IEEE 64-bit floating point type in the
-      context [c]. See [llvm::Type::DoubleTy]. *)
-  val make : Context.t -> c
-
-  (** [DoubleType.test ty] checks whether the {Type.c} [ty] can be safely
-      downcast to [DoubleType.c]. *)
-  val test : Type.c -> bool
-
-  (** [DoubleType.from ty] performs a checked downcast of the {Type.c} [ty] to
-      [DoubleType.c]. *)
-  val from : Type.c -> c
-end
-
-module X86fp80Type : sig
-  type t
-  class c : t -> object inherit RealType.c end
-
-  (** [X86fp80Type.make c] returns the x87 80-bit floating point type in the
-      context [c]. See [llvm::Type::X86_FP80Ty]. *)
-  val make : Context.t -> c
-
-  (** [X86fp80Type.test ty] checks whether the {Type.c} [ty] can be safely
-      downcast to [X86fp80Type.c]. *)
-  val test : Type.c -> bool
-
-  (** [X86fp80Type.from ty] performs a checked downcast of the {Type.c} [ty] to
-      [X86fp80Type.c]. *)
-  val from : Type.c -> c
-end
-
-module Fp128Type : sig
-  type t
-  class c : t -> object inherit RealType.c end
-
-  (** [Fp128Type.make c] returns the IEEE 128-bit floating point type in the
-      context [c]. See [llvm::Type::FP128Ty]. *)
-  val make : Context.t -> c
-
-  (** [Fp128Type.test ty] checks whether the {Type.c} [ty] can be safely
-      downcast to [Fp128Type.c]. *)
-  val test : Type.c -> bool
-
-  (** [Fp128Type.from ty] performs a checked downcast of the {Type.c} [ty] to
-      [Fp128Type.c]. *)
-  val from : Type.c -> c
-end
-
-module Ppc_fp128Type : sig
-  type t
-  class c : t -> object inherit RealType.c end
-
-  (** [Ppc_fp128Type.make c] returns the PowerPC 128-bit floating point type in
-      the context [c]. See [llvm::Type::PPC_FP128Ty]. *)
-  val make : Context.t -> c
-
-  (** [Ppc_fp128Type.test ty] checks whether the {Type.c} [ty] can be safely
-      downcast to [Ppc_fp128Type.c]. *)
-  val test : Type.c -> bool
-
-  (** [Ppc_fp128Type.from ty] performs a checked downcast of the {Type.c} [ty]
-      to [Ppc_fp128Type.c]. *)
-  val from : Type.c -> c
-end
-
-
-(** {7 Operations on function types} *)
-
+(** Methods of function types: {!FunctionType.c} *)
 module FunctionType : sig
   type t
   class c : t -> object
@@ -417,8 +405,8 @@ module FunctionType : sig
         [false] otherwise. See the method [llvm::FunctionType::isVarArg]. *)
     method is_var_arg : bool
 
-    (** [fty#return_type] gets the return type of the function type [fty].
-        See the method [llvm::FunctionType::getReturnType]. *)
+    (** [fty#return_type] gets the return type of the function type [fty]. See
+        the method [llvm::FunctionType::getReturnType]. *)
     method return_type : Type.c
 
     (** [fty#param_types] gets the parameter types of the function type [fty].
@@ -426,36 +414,33 @@ module FunctionType : sig
     method param_types : Type.c array
   end
 
-  (** [function_type ret_ty param_tys] returns the function type returning
-      [ret_ty] and taking [param_tys] as parameters. If [vararg] is true,
-      the function type will also accept a variable number of arguments.
-      See the method [llvm::FunctionType::get]. *)
+  (** [FunctionType.make ret_ty param_tys] returns the function type returning
+      [ret_ty] and taking [param_tys] as parameters. If [vararg] is true, the
+      function type will also accept a variable number of arguments. See the
+      method [llvm::FunctionType::get]. *)
   val make : ?vararg:bool -> ret:Type.c -> params:Type.c array -> c
 
-  (** [FunctionType.test ty] checks whether the {Type.c} [ty] can be safely
+  (** [FunctionType.test ty] checks whether the {!Type.c} [ty] can be safely
       downcast to [FunctionType.c]. *)
   val test : Type.c -> bool
 
-  (** [FunctionType.from ty] performs a checked downcast of the {Type.c} [ty]
+  (** [FunctionType.from ty] performs a checked downcast of the {!Type.c} [ty]
       to [FunctionType.c]. *)
   val from : Type.c -> c
 end
 
-
-(** {7 Operations on struct types} *)
-
+(** Methods of structure types: {!StructType.c} *)
 module StructType : sig
   type t
   class c : t -> object
     inherit Type.c
 
-    (** [ty#name] returns the name of the named structure type [ty],
-        or None if the structure type is not named. *)
+    (** [sty#name] returns the name of the named structure type [ty], or None
+        if the structure type is not named. *)
     method name : string option
 
-    (** [ty#set_body elts] sets the body of the named struct [ty]
-        to the [elts] elements.
-        See the method [llvm::StructType::setBody]. *)
+    (** [sty#set_body elts] sets the body of the named struct [ty] to the
+        [elts] elements. See the method [llvm::StructType::setBody]. *)
     method set_body : ?packed:bool -> elts:Type.c array -> unit
 
     (** [sty#element_types] returns the constituent types of the struct type
@@ -477,40 +462,41 @@ module StructType : sig
   val make : ?packed:bool -> Context.t -> elts:Type.c array -> c
 
   (** [StructType.named context name] returns the named structure type [name]
-      in the context [context].
-      See the method [llvm::StructType::get]. *)
+      in the context [context]. See the method [llvm::StructType::get]. *)
   val named : Context.t -> string -> c
 
-  (** [StructType.test ty] checks whether the {Type.c} [ty] can be safely
+  (** [StructType.test ty] checks whether the {!Type.c} [ty] can be safely
       downcast to [StructType.c]. *)
   val test : Type.c -> bool
 
-  (** [StructType.from ty] performs a checked downcast of the {Type.c} [ty]
-      to [StructType.c]. *)
+  (** [StructType.from ty] performs a checked downcast of the {!Type.c} [ty] to
+      [StructType.c]. *)
   val from : Type.c -> c
 end
 
 
 (** {7 Operations on pointer, vector, and array types} *)
 
+(** Methods of all sequential types: {!SequentialType.c} *)
 module SequentialType : sig
   type t
   class c : t -> object
     inherit Type.c
 
-    (** [element_type ty] returns the element type of the pointer, vector, or
-        array type [ty]. See the method [llvm::SequentialType::get]. *)
+    (** [seqty#element_type] returns the element type of the pointer, vector,
+        or array type [seqty]. See the method [llvm::SequentialType::get]. *)
     method element_type : Type.t
   end
 end
 
+(** Methods of array types: {!ArrayType.c} *)
 module ArrayType : sig
   type t
   class c : t -> object
     inherit SequentialType.c
 
-    (** [aty#length] returns the element count of the array type [aty].
-        See the method [llvm::ArrayType::getNumElements]. *)
+    (** [aty#length] returns the element count of the array type [aty]. See the
+        method [llvm::ArrayType::getNumElements]. *)
     method length : int
   end
 
@@ -518,15 +504,16 @@ module ArrayType : sig
       type [ty]. See the method [llvm::ArrayType::get]. *)
   val make : Type.c -> len:int -> c
 
-  (** [ArrayType.test ty] checks whether the {Type.c} [ty] can be safely
+  (** [ArrayType.test ty] checks whether the {!Type.c} [ty] can be safely
       downcast to [ArrayType.c]. *)
   val test : Type.c -> bool
 
-  (** [ArrayType.from ty] performs a checked downcast of the {Type.c} [ty]
-      to [ArrayType.c]. *)
+  (** [ArrayType.from ty] performs a checked downcast of the {!Type.c} [ty] to
+      [ArrayType.c]. *)
   val from : Type.c -> c
 end
 
+(** Methods of pointer types: {!PointerType.c} *)
 module PointerType : sig
   type t
   class c : t -> object
@@ -538,26 +525,27 @@ module PointerType : sig
   end
 
   (** [PointerType.make ty] returns the pointer type referencing objects of
-      type [ty] in the default address space (0).
-      See the method [llvm::PointerType::getUnqual]. *)
+      type [ty] in the specified address space (default 0). See the method
+      [llvm::PointerType::getUnqual]. *)
   val make : ?addrspace:int -> Type.c -> c
 
-  (** [PointerType.test ty] checks whether the {Type.c} [ty] can be safely
+  (** [PointerType.test ty] checks whether the {!Type.c} [ty] can be safely
       downcast to [PointerType.c]. *)
   val test : Type.c -> bool
 
-  (** [PointerType.from ty] performs a checked downcast of the {Type.c} [ty]
+  (** [PointerType.from ty] performs a checked downcast of the {!Type.c} [ty]
       to [PointerType.c]. *)
   val from : Type.c -> c
 end
 
+(** Methods of vector types: {!VectorType.c} *)
 module VectorType : sig
   type t
   class c : t -> object
     inherit SequentialType.c
 
-    (** [ty#size] returns the element count of the vector type [ty].
-        See the method [llvm::VectorType::getNumElements]. *)
+    (** [vty#size] returns the element count of the vector type [ty]. See the
+        method [llvm::VectorType::getNumElements]. *)
     method size : int
   end
 
@@ -565,54 +553,17 @@ module VectorType : sig
       the primitive type [ty]. See the method [llvm::ArrayType::get]. *)
   val make : Type.c -> size:int -> c
 
-  (** [VectorType.test ty] checks whether the {Type.c} [ty] can be safely
+  (** [VectorType.test ty] checks whether the {!Type.c} [ty] can be safely
       downcast to [VectorType.c]. *)
   val test : Type.c -> bool
 
-  (** [VectorType.from ty] performs a checked downcast of the {Type.c} [ty]
-      to [VectorType.c]. *)
+  (** [VectorType.from ty] performs a checked downcast of the {!Type.c} [ty] to
+      [VectorType.c]. *)
   val from : Type.c -> c
 end
 
 
-(** {7 Operations on other types} *)
-
-module VoidType : sig
-  type t
-  class c : t -> object inherit Type.c end
-
-  (** [VoidType.make c] creates a type of a function which does not return any
-      value in the context [c]. See [llvm::Type::VoidTy]. *)
-  val make : Context.t -> c
-
-  (** [VoidType.test ty] checks whether the {Type.c} [ty] can be safely
-      downcast to [VoidType.c]. *)
-  val test : Type.c -> bool
-
-  (** [VoidType.from ty] performs a checked downcast of the {Type.c} [ty]
-      to [VoidType.c]. *)
-  val from : Type.c -> c
-end
-
-module LabelType : sig
-  type t
-  class c : t -> object inherit Type.c end
-
-  (** [LabelType.make c] creates a type of a basic block in the context [c].
-      See [llvm::Type::LabelTy]. *)
-  val make : Context.t -> c
-
-  (** [LabelType.test ty] checks whether the {Type.c} [ty] can be safely
-      downcast to [LabelType.c]. *)
-  val test : Type.c -> bool
-
-  (** [LabelType.from ty] performs a checked downcast of the {Type.c} [ty]
-      to [LabelType.c]. *)
-  val from : Type.c -> c
-end
-
-
-(** {6 Modules} *)
+(** {6 LLVM Modules} *)
 
 (** The top-level container for all other LLVM Intermediate Representation (IR)
     objects. See the [llvm::Module] class. *)
@@ -670,16 +621,47 @@ module Module : sig
 end
 
 
-(* {6 Values} *)
+(** {6 LLVM Values} *)
 
-(** Any value in the LLVM IR. Functions, instructions, global variables,
-    constants, and much more are all [Value.c]s. See the [llvm::Value] class.
-    This type includes a wide range of subclasses. *)
+(**
+  Inheritance hierarchy of Value subclasses:
+
+  {v
+  Value
+  | Argument
+  | BasicBlock
+  | InlineAsm
+  | MDNode
+  | MDString
+  | Use
+  | User
+    | Constant
+    | | ConstantInt
+    | | ConstantFP
+    | | ConstantPointerNull
+    | | ConstantArray
+    | | ConstantStruct
+    | | ConstantVector
+    | | ConstantExpr
+    | | BlockAddress
+    | | GlobalValue
+    |   | GlobalVariable
+    |   | GlobalAlias
+    |   | Function
+    | Instruction
+      | TerminatorInst
+      | CallInst
+      | InvokeInst
+      | PHINode
+  v}
+*)
+
+(** Methods of all values: {!Value.c} *)
 module Value : sig
   type t
 
-  (** The kind of an [Value.c], the result of [v#classify].
-      See the various [LLVMIsA*] functions. *)
+  (** The kind of a {!Value.c}, the result of [v#classify]. See the various
+      [LLVMIsA*] functions. *)
   type kind = Llvm.ValueKind.t =
     | NullValue | Argument | BasicBlock | InlineAsm
     | MDNode | MDString | BlockAddress
@@ -721,8 +703,9 @@ module Value : sig
 end
 
 
-(* {6 Users} *)
-
+(** A value that uses other values as its operands. See the [llvm::User]
+    class. *)
+(** Methods: {!User.c} *)
 module User : sig
   type t
   class c : t -> object
@@ -743,8 +726,6 @@ module User : sig
   end
 end
 
-
-(* {6 Uses} *)
 
 (** Used to store users and usees of values. See the [llvm::Use] class. *)
 module Use : sig
@@ -781,8 +762,9 @@ module Use : sig
 end
 
 
-(** {7 Operations on constants of (mostly) any type} *)
+(** {6 LLVM Constants} *)
 
+(** Methods of all constants: {!Constant.c} *)
 module Constant : sig
   type t
   class c : t -> object
@@ -797,215 +779,191 @@ module Constant : sig
     method is_undef : bool
   end
 
-  (** [Constant.test v] checks whether the {Value.c} [v] can be safely
+  (** [Constant.null ty] returns the constant null (zero) of the type [ty]. See
+      the method [llvm::Constant::getNullValue]. *)
+  val null : Type.c -> c
+
+  (** [Constant.undef ty] returns the undefined value of the type [ty]. See the
+      method [llvm::UndefValue::get]. *)
+  val undef : Type.c -> c
+
+  (** [Constant.test v] checks whether the {!Value.c} [v] can be safely
       downcast to [Constant.c]. *)
   val test : Value.c -> bool
 
-  (** [Constant.from v] performs a checked downcast of the {Value.c} [v]
-      to [Constant.c]. *)
+  (** [Constant.from v] performs a checked downcast of the {!Value.c} [v] to
+      [Constant.c]. *)
   val from : Value.c -> c
 end
 
 
 (** {7 Operations on scalar constants} *)
 
-module ConstInt : sig
+(** Methods of constant integers: {!ConstantInt.c} *)
+module ConstantInt : sig
   type t
   class c : t -> object
     inherit Constant.c
 
     (** [int64_of_const c] returns the int64 value of the [c] constant integer.
-        None is returned if this is not an integer constant, or bitwidth
-        exceeds 64. See the method [llvm::ConstantInt::getSExtValue].*)
+        None is returned if the bitwidth exceeds 64. See the method
+        [llvm::ConstantInt::getSExtValue]. *)
     method int64_value : Int64.t option
   end
 
-  (** [ConstInt.null ty] returns the constant null (zero) of the type [ty].
-      See the method [llvm::Constant::getNullValue]. *)
-  val null : IntegerType.c -> c
-
-  (** [ConstInt.undef ty] returns the undefined value of the type [ty].
-      See the method [llvm::UndefValue::get]. *)
-  val undef : IntegerType.c -> c
-
-  (** [ConstInt.all_ones ty] returns the constant '-1' of the integer or vector
-      type [ty]. See the method [llvm::Constant::getAllOnesValue]. *)
+  (** [ConstantInt.all_ones ty] returns the constant '-1' of the integer or
+      vector type [ty]. See the method [llvm::Constant::getAllOnesValue]. *)
   val all_ones : IntegerType.c -> c
 
-  (** [ConstInt.of_int ty i] returns the integer constant of type [ty] and
+  (** [ConstantInt.of_int ty i] returns the integer constant of type [ty] and
       value [i]. See the method [llvm::ConstantInt::get]. *)
   val of_int : IntegerType.c -> int -> c
 
-  (** [ConstInt.of_int64 ty i] returns the integer constant of type [ty] and
+  (** [ConstantInt.of_int64 ty i] returns the integer constant of type [ty] and
       value [i]. See the method [llvm::ConstantInt::get]. *)
   val of_int64 : ?signext:bool -> IntegerType.c -> Int64.t -> c
 
-  (** [ConstInt.of_string ty s r] returns the integer constant of type [ty] and
-      value [s], with the radix [r]. See the method [llvm::ConstantInt::get]. *)
+  (** [ConstantInt.of_string ty s r] returns the integer constant of type [ty]
+      and value [s], with the radix [r]. See the method
+      [llvm::ConstantInt::get]. *)
   val of_string : IntegerType.c -> string -> radix:int -> c
 
-  (** [ConstInt.test v] checks whether the {Value.c} [v] can be safely
-      downcast to [ConstInt.c]. *)
+  (** [ConstantInt.test v] checks whether the {!Value.c} [v] can be safely
+      downcast to [ConstantInt.c]. *)
   val test : Value.c -> bool
 
-  (** [ConstInt.from v] performs a checked downcast of the {Value.c} [v]
-      to [ConstInt.c]. *)
+  (** [ConstantInt.from v] performs a checked downcast of the {!Value.c} [v] to
+      [ConstantInt.c]. *)
   val from : Value.c -> c
 end
 
-module ConstReal : sig
+(** Methods of floating point constants: {!ConstantFP.c} *)
+module ConstantFP : sig
   type t
   class c : t -> object
     inherit Constant.c
   end
 
-  (** [ConstReal.null ty] returns the constant null (zero) of the type [ty].
-      See the method [llvm::Constant::getNullValue]. *)
-  val null : RealType.c -> c
-
-  (** [ConstReal.undef ty] returns the undefined value of the type [ty].
-      See the method [llvm::UndefValue::get]. *)
-  val undef : RealType.c -> c
-
-  (** [ConstFloat.of_float ty n] returns the floating point constant of type
+  (** [ConstantFP.of_float ty n] returns the floating point constant of type
       [ty] and value [n]. See the method [llvm::ConstantFP::get]. *)
-  val of_float : RealType.c -> float -> c
+  val of_float : Type.c -> float -> c
 
-  (** [ConstFloat.of_string ty s] returns the floating point constant of type
-      [ty] and value [n]. See the method [llvm::ConstantFP::get]. *)
-  val of_string : RealType.c -> string -> c
+  (** [ConstantFP.of_string ty s] returns the floating point constant of type
+      [ty] and value [s]. See the method [llvm::ConstantFP::get]. *)
+  val of_string : Type.c -> string -> c
 
-  (** [ConstFloat.test v] checks whether the {Value.c} [v] can be safely
-      downcast to [ConstFloat.c]. *)
+  (** [ConstantFP.test v] checks whether the {!Value.c} [v] can be safely
+      downcast to [ConstantFP.c]. *)
   val test : Value.c -> bool
 
-  (** [ConstFloat.from v] performs a checked downcast of the {Value.c} [v]
-      to [ConstFloat.c]. *)
+  (** [ConstantFP.from v] performs a checked downcast of the {!Value.c} [v] to
+      [ConstantFP.c]. *)
   val from : Value.c -> c
 end
 
-module ConstPointerNull : sig
+(** Methods of constant null pointers: {!ConstantPointerNull.c} *)
+module ConstantPointerNull : sig
   type t
   class c : t -> object inherit Constant.c end
 
-  (** [ConstPointerNull.make ty] returns the constant null (zero) pointer of
+  (** [ConstantPointerNull.make ty] returns the constant null (zero) pointer of
       the pointer type [ty]. See the method
       [llvm::ConstantPointerNull::get]. *)
   val make : PointerType.c -> c
 
-  (** [ConstPointerNull.test v] checks whether the {Value.c} [v] can be safely
-      downcast to [ConstPointerNull.c]. *)
+  (** [ConstantPointerNull.test v] checks whether the {!Value.c} [v] can be
+      safely downcast to [ConstantPointerNull.c]. *)
   val test : Value.c -> bool
 
-  (** [ConstPointerNull.from v] performs a checked downcast of the {Value.c} [v]
-      to [ConstPointerNull.c]. *)
+  (** [ConstantPointerNull.from v] performs a checked downcast of the
+      {!Value.c} [v] to [ConstantPointerNull.c]. *)
   val from : Value.c -> c
 end
 
 
 (** {7 Operations on composite constants} *)
 
-module ConstArray : sig
+(** Methods of constant arrays (including strings): {!ConstantArray.c} *)
+module ConstantArray : sig
   type t
   class c : t -> object inherit Constant.c end
 
-  (** [ConstArray.null ty] returns the constant null (zero) of the type [ty].
-      See the method [llvm::Constant::getNullValue]. *)
-  val null : ArrayType.c -> c
-
-  (** [ConstArray.undef ty] returns the undefined value of the type [ty].
-      See the method [llvm::UndefValue::get]. *)
-  val undef : ArrayType.c -> c
-
-  (** [ConstArray.of_string c s] returns the constant [i8] array with the
+  (** [ConstantArray.of_string c s] returns the constant [i8] array with the
       values of the characters in the string [s] in the context [c]. This value
       can in turn be used as the initializer for a global variable. See the
       method [llvm::ConstantArray::get]. *)
   val of_string : ?nullterm:bool -> Context.t -> string -> c
 
-  (** [ConstArray.make ty elts] returns the constant array of type [array_type
-      ty (Array.length elts)] and containing the values [elts]. This value can
-      in turn be used as the initializer for a global variable. See the method
-      [llvm::ConstantArray::get]. *)
+  (** [ConstantArray.make ty elts] returns the constant array of type
+      [array_type ty (Array.length elts)] and containing the values [elts].
+      This value can in turn be used as the initializer for a global variable.
+      See the method [llvm::ConstantArray::get]. *)
   val make : Type.c -> Constant.c array -> c
 
-  (** [ConstArray.test v] checks whether the {Value.c} [v] can be safely
-      downcast to [ConstArray.c]. *)
+  (** [ConstantArray.test v] checks whether the {!Value.c} [v] can be safely
+      downcast to [ConstantArray.c]. *)
   val test : Value.c -> bool
 
-  (** [ConstArray.from v] performs a checked downcast of the {Value.c} [v]
-      to [ConstArray.c]. *)
+  (** [ConstantArray.from v] performs a checked downcast of the {!Value.c} [v]
+      to [ConstantArray.c]. *)
   val from : Value.c -> c
 end
 
-module ConstStruct : sig
+(** Methods of structured constants: {!ConstantStruct.c} *)
+module ConstantStruct : sig
   type t
   class c : t -> object inherit Constant.c end
 
-  (** [ConstStruct.null ty] returns the constant null (zero) of the type [ty].
-      See the method [llvm::Constant::getNullValue]. *)
-  val null : StructType.c -> c
-
-  (** [ConstStruct.undef ty] returns the undefined value of the type [ty].
-      See the method [llvm::UndefValue::get]. *)
-  val undef : StructType.c -> c
-
-  (** [ConstStruct.make context elts] returns the structured constant of type
-      [struct_type (Array.map type_of elts)] and containing the values [elts]
-      in the context [context]. This value can in turn be used as the
+  (** [ConstantStruct.make context elts] returns the structured constant of
+      type [struct_type (Array.map type_of elts)] and containing the values
+      [elts] in the context [context]. This value can in turn be used as the
       initializer for a global variable. See the method
       [llvm::ConstantStruct::getAnon]. *)
   val make : ?packed:bool -> Context.t -> Constant.c array -> c
 
-  (** [ConstStruct.named namedty elts] returns the structured constant of type
-      [namedty] (which must be a named structure type) and containing the
+  (** [ConstantStruct.named namedty elts] returns the structured constant of
+      type [namedty] (which must be a named structure type) and containing the
       values [elts]. This value can in turn be used as the initializer for a
       global variable. See the method [llvm::ConstantStruct::get]. *)
   val named : StructType.c -> Constant.c array -> c
 
-  (** [ConstStruct.test v] checks whether the {Value.c} [v] can be safely
-      downcast to [ConstStruct.c]. *)
+  (** [ConstantStruct.test v] checks whether the {!Value.c} [v] can be safely
+      downcast to [ConstantStruct.c]. *)
   val test : Value.c -> bool
 
-  (** [ConstStruct.from v] performs a checked downcast of the {Value.c} [v]
-      to [ConstStruct.c]. *)
+  (** [ConstantStruct.from v] performs a checked downcast of the {!Value.c} [v]
+      to [ConstantStruct.c]. *)
   val from : Value.c -> c
 end
 
-module ConstVector : sig
+(** Methods of vector constants: {!ConstantVector.c} *)
+module ConstantVector : sig
   type t
   class c : t -> object inherit Constant.c end
 
-  (** [ConstVector.null ty] returns the constant null (zero) of the type [ty].
-      See the method [llvm::Constant::getNullValue]. *)
-  val null : VectorType.c -> c
-
-  (** [ConstVector.undef ty] returns the undefined value of the type [ty].
-      See the method [llvm::UndefValue::get]. *)
-  val undef : VectorType.c -> c
-
-  (** [ConstVector.all_ones ty] returns the constant '-1' of the integer or
-      vector type [ty]. See the method [llvm::Constant::getAllOnesValue]. *)
+  (** [ConstantVector.all_ones ty] returns the constant '-1' of the vector type
+      [ty]. See the method [llvm::Constant::getAllOnesValue]. *)
   val all_ones : VectorType.c -> c
 
-  (** [ConstVector elts] returns the vector constant of type [vector_type
+  (** [ConstantVector elts] returns the vector constant of type [vector_type
       (type_of elts.(0)) (Array.length elts)] and containing the values [elts].
       See the method [llvm::ConstantVector::get]. *)
   val make : Constant.c array -> c
 
-  (** [ConstVector.test v] checks whether the {Value.c} [v] can be safely
-      downcast to [ConstVector.c]. *)
+  (** [ConstantVector.test v] checks whether the {!Value.c} [v] can be safely
+      downcast to [ConstantVector.c]. *)
   val test : Value.c -> bool
 
-  (** [ConstVector.from v] performs a checked downcast of the {Value.c} [v]
-      to [ConstVector.c]. *)
+  (** [ConstantVector.from v] performs a checked downcast of the {!Value.c} [v]
+      to [ConstantVector.c]. *)
   val from : Value.c -> c
 end
 
 
-(** {7 Constant expressions} *)
+(** {7 Operations on constant expressions} *)
 
-module ConstExpr : sig
+(** Methods of constant expressions: {!ConstantExpr.c} *)
+module ConstantExpr : sig
   type t
   class c : t -> object
     inherit Constant.c
@@ -1015,16 +973,17 @@ module ConstExpr : sig
   (** The constructor functions below correspond to methods
       [llvm::ConstantExpr::get*]. *)
 
-  (** [align_of ty] returns the alignof constant for the type [ty]. This is
-      equivalent to [const_ptrtoint (const_gep (const_null (pointer_type {i8,ty}))
-      (const_int i32_type 0) (const_int i32_type 1)) i32_type], but considerably
-      more readable.  See the method [llvm::ConstantExpr::getAlignOf]. *)
+  (** [ConstantExpr.align_of ty] returns the alignof constant for the type
+      [ty]. This is equivalent to [const_ptrtoint (const_gep (const_null
+      (pointer_type {i8,ty})) (const_int i32_type 0) (const_int i32_type 1))
+      i32_type], but considerably more readable. See the method
+      [llvm::ConstantExpr::getAlignOf]. *)
   val align_of : Type.c -> c
 
-  (** [size_of ty] returns the sizeof constant for the type [ty]. This is
-      equivalent to [const_ptrtoint (const_gep (const_null (pointer_type ty))
-      (const_int i32_type 1)) i64_type], but considerably more readable.
-      See the method [llvm::ConstantExpr::getSizeOf]. *)
+  (** [ConstantExpr.size_of ty] returns the sizeof constant for the type [ty].
+      This is equivalent to [const_ptrtoint (const_gep (const_null
+      (pointer_type ty)) (const_int i32_type 1)) i64_type], but considerably
+      more readable. See the method [llvm::ConstantExpr::getSizeOf]. *)
   val size_of : Type.c -> c
 
   (** Refer to the comments on {!Operator.unary}. *)
@@ -1033,65 +992,66 @@ module ConstExpr : sig
   (** Refer to the comments on {!Operator.binary}. *)
   val binary : Operator.binary -> lhs:Constant.c -> rhs:Constant.c -> c
 
-  (** [ConstExpr.icmp pred lhs rhs] returns the constant comparison of two integer
-      constants, [lhs pred rhs].
-      See the method [llvm::ConstantExpr::getICmp]. *)
-  val icmp : Predicate.icmp -> lhs:Constant.c -> rhs:Constant.c -> c
-
-  (** [ConstExpr.fcmp pred lhs rhs] returns the constant comparison of two floating
-      point constants, [lhs pred rhs].
-      See the method [llvm::ConstantExpr::getFCmp]. *)
-  val fcmp : Predicate.fcmp -> lhs:Constant.c -> rhs:Constant.c -> c
-
-  (** [ConstExpr.gep pc indices] returns the constant [getElementPtr] of [p1] with the
-      constant integers indices from the array [indices].
-      See the method [llvm::ConstantExpr::getGetElementPtr]. *)
-  val gep : ?inbounds:bool -> Constant.c -> Constant.c array -> c
-
   (** Refer to the comments on {!Operator.cast}. *)
   val cast : Operator.cast -> Constant.c -> Type.c -> c
 
-  (** [ConstExpr.select cond t f] returns the constant conditional which returns value
-      [t] if the boolean constant [cond] is true and the value [f] otherwise.
-      See the method [llvm::ConstantExpr::getSelect]. *)
+  (** [ConstantExpr.icmp pred lhs rhs] returns the constant comparison of two
+      integer constants, [lhs pred rhs]. See the method
+      [llvm::ConstantExpr::getICmp]. *)
+  val icmp : Predicate.icmp -> lhs:Constant.c -> rhs:Constant.c -> c
+
+  (** [ConstantExpr.fcmp pred lhs rhs] returns the constant comparison of two
+      floating point constants, [lhs pred rhs]. See the method
+      [llvm::ConstantExpr::getFCmp]. *)
+  val fcmp : Predicate.fcmp -> lhs:Constant.c -> rhs:Constant.c -> c
+
+  (** [ConstantExpr.gep pc indices] returns the constant [getElementPtr] of
+      [pc] with the constant integer indices from the array [indices]. See the
+      method [llvm::ConstantExpr::getGetElementPtr]. *)
+  val gep : ?inbounds:bool -> Constant.c -> Constant.c array -> c
+
+  (** [ConstantExpr.select cond t f] returns the constant conditional which
+      returns value [t] if the boolean constant [cond] is true and the value
+      [f] otherwise. See the method [llvm::ConstantExpr::getSelect]. *)
   val select : cond:Constant.c -> t:Constant.c -> f:Constant.c -> c
 
-  (** [ConstExpr.extractelement vec i] returns the constant [i]th element of
-      constant vector [vec]. [i] must be a constant [i32] value unsigned less than
-      the size of the vector.
-      See the method [llvm::ConstantExpr::getExtractElement]. *)
+  (** [ConstantExpr.extract_element vec i] returns the constant [i]th element
+      of constant vector [vec]. [i] must be a constant [i32] value unsigned
+      less than the size of the vector. See the method
+      [llvm::ConstantExpr::getExtractElement]. *)
   val extract_element : vec:Constant.c -> idx:Constant.c -> c
 
-  (** [ConstExpr.insertelement vec v i] returns the constant vector with the same
-      elements as constant vector [v] but the [i]th element replaced by the
-      constant [v]. [v] must be a constant value with the type of the vector
-      elements. [i] must be a constant [i32] value unsigned less than the size
-      of the vector.
-      See the method [llvm::ConstantExpr::getInsertElement]. *)
+  (** [ConstantExpr.insert_element vec v i] returns the constant vector with
+      the same elements as constant vector [v] but the [i]th element replaced
+      by the constant [v]. [v] must be a constant value with the type of the
+      vector elements. [i] must be a constant [i32] value unsigned less than
+      the size of the vector. See the method
+      [llvm::ConstantExpr::getInsertElement]. *)
   val insert_element : vec:Constant.c -> elt:Constant.c -> idx:Constant.c -> c
 
-  (** [ConstExpr.shufflevector a b mask] returns a constant [shufflevector].
-      See the LLVM Language Reference for details on the [shufflevector]
-      instruction.
-      See the method [llvm::ConstantExpr::getShuffleVector]. *)
+  (** [ConstantExpr.shufflevector v1 v2 mask] returns a constant
+      [shufflevector]. See the LLVM Language Reference for details on the
+      [shufflevector] instruction. See the method
+      [llvm::ConstantExpr::getShuffleVector]. *)
   val shuffle_vector : v1:Constant.c -> v2:Constant.c -> mask:Constant.c -> c
 
-  (** [ConstExpr.extractvalue agg idxs] returns the constant [idxs]th value of
-      constant aggregate [agg]. Each [idxs] must be less than the size of the
-      aggregate.  See the method [llvm::ConstantExpr::getExtractValue]. *)
+  (** [ConstantExpr.extractvalue agg idxs] returns the constant [idxs]th value
+      of constant aggregate [agg]. Each [idxs] must be less than the size of
+      the aggregate. See the method [llvm::ConstantExpr::getExtractValue]. *)
   val extract_value : agg:Constant.c -> idxs:int array -> c
 
-  (** [ConstExpr.insertvalue agg val idxs] inserts the value [val] in the specified
-      indexs [idxs] in the aggegate [agg]. Each [idxs] must be less than the size
-      of the aggregate. See the method [llvm::ConstantExpr::getInsertValue]. *)
+  (** [ConstantExpr.insertvalue agg elt idxs] inserts the value [elt] in the
+      specified indexes [idxs] in the aggegate [agg]. Each [idxs] must be less
+      than the size of the aggregate. See the method
+      [llvm::ConstantExpr::getInsertValue]. *)
   val insert_value : agg:Constant.c -> elt:Constant.c -> idxs:int array -> c
 
-  (** [ConstExpr.test v] checks whether the {Value.c} [v] can be safely
-      downcast to [ConstExpr.c]. *)
+  (** [ConstantExpr.test v] checks whether the {Value.c} [v] can be safely
+      downcast to [ConstantExpr.c]. *)
   val test : Value.c -> bool
 
-  (** [ConstExpr.from v] performs a checked downcast of the {Value.c} [v]
-      to [ConstExpr.c]. *)
+  (** [ConstantExpr.from v] performs a checked downcast of the {Value.c} [v] to
+      [ConstantExpr.c]. *)
   val from : Value.c -> c
 end
 
@@ -1145,7 +1105,7 @@ module MDString : sig
 end
 
 
-(** {7 Operations on global variables, functions, and aliases (globals)} *)
+(** {6 LLVM GlobalValues (global variables, aliases, and functions)} *)
 
 module GlobalValue : sig
   type t
@@ -1231,8 +1191,6 @@ module GlobalValue : sig
 end
 
 
-(** {7 Operations on global variables} *)
-
 module GlobalVariable : sig
   type t
   class c : t -> object
@@ -1303,6 +1261,8 @@ module GlobalVariable : sig
       to [GlobalVariable.c]. *)
   val from : Value.c -> c
 
+  (** Iterators over [GlobalVariable]s in a [Module] *)
+
   module Pos : sig
     type collection = Module.t
     type item = c
@@ -1311,11 +1271,13 @@ module GlobalVariable : sig
     val succ : item -> (collection, item) pos
     val pred : item -> (collection, item) rev_pos
   end
-  include module type of Iterable(Pos)
+
+  val iter       : Module.t -> (c -> unit) -> unit
+  val rev_iter   : Module.t -> (c -> unit) -> unit
+  val fold_left  : 'a -> Module.t -> ('a -> c -> 'a) -> 'a
+  val fold_right : Module.t -> 'a -> (c -> 'a -> 'a) -> 'a
 end
 
-
-(** {7 Operations on aliases} *)
 
 module GlobalAlias : sig
   type t
@@ -1335,8 +1297,6 @@ module GlobalAlias : sig
   val from : Value.c -> c
 end
 
-
-(** {7 Operations on functions} *)
 
 module Function : sig
   type t
@@ -1424,6 +1384,8 @@ module Function : sig
       to [Function.c]. *)
   val from : Value.c -> c
 
+  (** Iterators over [Function]s in a [Module] *)
+
   module Pos : sig
     type collection = Module.t
     type item = c
@@ -1432,11 +1394,15 @@ module Function : sig
     val succ : item -> (collection, item) pos
     val pred : item -> (collection, item) rev_pos
   end
-  include module type of Iterable(Pos)
+
+  val iter       : Module.t -> (c -> unit) -> unit
+  val rev_iter   : Module.t -> (c -> unit) -> unit
+  val fold_left  : 'a -> Module.t -> ('a -> c -> 'a) -> 'a
+  val fold_right : Module.t -> 'a -> (c -> 'a -> 'a) -> 'a
 end
 
 
-(** {7 Operations on params} *)
+(** {7 Operations on parameters} *)
 
 module Argument : sig
   type t
@@ -1478,6 +1444,8 @@ module Argument : sig
       to [Argument.c]. *)
   val from : Value.c -> c
 
+  (** Iterators over [Argument]s in a [Function] *)
+
   module Pos : sig
     type collection = Function.c
     type item = c
@@ -1486,7 +1454,11 @@ module Argument : sig
     val succ : item -> (collection, item) pos
     val pred : item -> (collection, item) rev_pos
   end
-  include module type of Iterable(Pos)
+
+  val iter       : Function.c -> (c -> unit) -> unit
+  val rev_iter   : Function.c -> (c -> unit) -> unit
+  val fold_left  : 'a -> Function.c -> ('a -> c -> 'a) -> 'a
+  val fold_right : Function.c -> 'a -> (c -> 'a -> 'a) -> 'a
 end
 
 
@@ -1532,6 +1504,8 @@ module BasicBlock : sig
       to [BasicBlock.c]. *)
   val from : Value.c -> c
 
+  (** Iterators over [BasicBlock]s in a [Function] *)
+
   module Pos : sig
     type collection = Function.c
     type item = c
@@ -1540,7 +1514,11 @@ module BasicBlock : sig
     val succ : item -> (collection, item) pos
     val pred : item -> (collection, item) rev_pos
   end
-  include module type of Iterable(Pos)
+
+  val iter       : Function.c -> (c -> unit) -> unit
+  val rev_iter   : Function.c -> (c -> unit) -> unit
+  val fold_left  : 'a -> Function.c -> ('a -> c -> 'a) -> 'a
+  val fold_right : Function.c -> 'a -> (c -> 'a -> 'a) -> 'a
 end
 
 module BlockAddress : sig
@@ -1561,7 +1539,7 @@ module BlockAddress : sig
 end
 
 
-(** {7 Operations on instructions} *)
+(** {6 LLVM Instructions} *)
 
 module Instruction : sig
   type t
@@ -1607,6 +1585,8 @@ module Instruction : sig
       to [Instruction.c]. *)
   val from : Value.c -> c
 
+  (** Iterators over [Instruction]s in a [BasicBlock] *)
+
   module Pos : sig
     type collection = BasicBlock.c
     type item = c
@@ -1615,7 +1595,11 @@ module Instruction : sig
     val succ : item -> (collection, item) pos
     val pred : item -> (collection, item) rev_pos
   end
-  include module type of Iterable(Pos)
+
+  val iter       : BasicBlock.c -> (c -> unit) -> unit
+  val rev_iter   : BasicBlock.c -> (c -> unit) -> unit
+  val fold_left  : 'a -> BasicBlock.c -> ('a -> c -> 'a) -> 'a
+  val fold_right : BasicBlock.c -> 'a -> (c -> 'a -> 'a) -> 'a
 end
 
 module TerminatorInst : sig
@@ -1745,8 +1729,10 @@ module PHINode : sig
 end
 
 
-(** {6 Instruction builders} *)
+(** {6 Instruction Builders} *)
 
+(** Used to generate instructions in the LLVM IR. See the [llvm::LLVMBuilder]
+    class. *)
 module Builder : sig
   type t
 
@@ -2089,8 +2075,10 @@ module Builder : sig
 end
 
 
-(** {6 Memory buffers} *)
+(** {6 Memory Buffers} *)
 
+(** Used to efficiently handle large buffers of read-only binary data.
+    See the [llvm::MemoryBuffer] class. *)
 module MemoryBuffer : sig
   type t
 
@@ -2110,6 +2098,7 @@ end
 
 (** {6 Pass Managers} *)
 
+(** Control of module and function pass pipelines *)
 module PassManager : sig
   type 'a t
   type module_pass

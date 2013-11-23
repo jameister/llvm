@@ -7,31 +7,25 @@
  *
  *===----------------------------------------------------------------------===*)
 
-
-type llcontext = Llvm.llcontext
-type lltype = Llvm.lltype
-type llmodule = Llvm.llmodule
-type llvalue = Llvm.llvalue
-type lluse = Llvm.lluse
-type llbasicblock = Llvm.llbasicblock
-type llbuilder = Llvm.llbuilder
-type llmemorybuffer = Llvm.llmemorybuffer
-
-type ('a, 'b) pos = ('a, 'b) Llvm.llpos
+type ('a, 'b) pos = ('a, 'b) Llvm.llpos =
+  | At_end of 'a
+  | Before of 'b
 let wrapl f = function
-  | Llvm.At_end coll -> Llvm.At_end (f coll)
-  | Llvm.Before _ as pos -> pos
+  | At_end coll -> At_end (f coll)
+  | Before _ as pos -> pos
 let wrapr f = function
-  | Llvm.At_end _ as pos -> pos
-  | Llvm.Before item -> Llvm.Before (f item)
+  | At_end _ as pos -> pos
+  | Before item -> Before (f item)
 
-type ('a, 'b) rev_pos = ('a, 'b) Llvm.llrev_pos
+type ('a, 'b) rev_pos = ('a, 'b) Llvm.llrev_pos =
+  | At_start of 'a
+  | After of 'b
 let rev_wrapl f = function
-  | Llvm.At_start coll -> Llvm.At_start (f coll)
-  | Llvm.After _ as pos -> pos
+  | At_start coll -> At_start (f coll)
+  | After _ as pos -> pos
 let rev_wrapr f = function
-  | Llvm.At_start _ as pos -> pos
-  | Llvm.After item -> Llvm.After (f item)
+  | At_start _ as pos -> pos
+  | After item -> After (f item)
 
 module type POSITION = sig
   type collection
@@ -66,6 +60,15 @@ module Iterable(P : POSITION) = struct
       | Llvm.After itm -> step (P.pred itm) (f itm acc)
     in step (P.last coll) init
 end
+
+type llcontext = Llvm.llcontext
+type lltype = Llvm.lltype
+type llmodule = Llvm.llmodule
+type llvalue = Llvm.llvalue
+type lluse = Llvm.lluse
+type llbasicblock = Llvm.llbasicblock
+type llbuilder = Llvm.llbuilder
+type llmemorybuffer = Llvm.llmemorybuffer
 
 exception IoError of string
 external register_exns : exn -> unit = "llvm_register_core_exns"
@@ -146,81 +149,13 @@ module Type = struct
     method context = Llvm.type_context p
     method to_string = Llvm.string_of_lltype p
   end
-end
-
-module VoidType = struct
-  type t = lltype
-  class c p = object inherit Type.c p end
-  let make ctx = new c (Llvm.void_type ctx)
-  let test ty = ty#classify = Llvm.TypeKind.Void
-  let from ty =
-    if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.VoidType")
-end
-
-module RealType = struct
-  type t = lltype
-  class c p = object inherit Type.c p end
-end
-
-module FloatType = struct
-  type t = lltype
-  class c p = object inherit RealType.c p end
-  let make ctx = new c (Llvm.float_type ctx)
-  let test ty = ty#classify = Llvm.TypeKind.Float
-  let from ty =
-    if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.FloatType")
-end
-
-module DoubleType = struct
-  type t = lltype
-  class c p = object inherit RealType.c p end
-  let make ctx = new c (Llvm.double_type ctx)
-  let test ty = ty#classify = Llvm.TypeKind.Double
-  let from ty =
-    if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.DoubleType")
-end
-
-module X86fp80Type = struct
-  type t = lltype
-  class c p = object inherit RealType.c p end
-  let make ctx = new c (Llvm.x86fp80_type ctx)
-  let test ty = ty#classify = Llvm.TypeKind.X86fp80
-  let from ty =
-    if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.X86_Fp80Type")
-end
-
-module Fp128Type = struct
-  type t = lltype
-  class c p = object inherit RealType.c p end
-  let make ctx = new c (Llvm.fp128_type ctx)
-  let test ty = ty#classify = Llvm.TypeKind.Fp128
-  let from ty =
-    if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.Fp128Type")
-end
-
-module Ppc_fp128Type = struct
-  type t = lltype
-  class c p = object inherit RealType.c p end
-  let make ctx = new c (Llvm.ppc_fp128_type ctx)
-  let test ty = ty#classify = Llvm.TypeKind.Ppc_fp128
-  let from ty =
-    if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.Ppc_Fp128Type")
-end
-
-module LabelType = struct
-  type t = lltype
-  class c p = object inherit Type.c p end
-  let make ctx = new c (Llvm.label_type ctx)
-  let test ty = ty#classify = Llvm.TypeKind.Label
-  let from ty =
-    if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.LabelType")
+  let void ctx = new c (Llvm.void_type ctx)
+  let float ctx = new c (Llvm.float_type ctx)
+  let double ctx = new c (Llvm.double_type ctx)
+  let x86fp80 ctx = new c (Llvm.x86fp80_type ctx)
+  let fp128 ctx = new c (Llvm.fp128_type ctx)
+  let ppc_fp128 ctx = new c (Llvm.ppc_fp128_type ctx)
+  let label ctx = new c (Llvm.label_type ctx)
 end
 
 module IntegerType = struct
@@ -238,7 +173,7 @@ module IntegerType = struct
   let test ty = ty#classify = Llvm.TypeKind.Integer
   let from ty =
     if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.IntegerType")
+    else raise (Cast_failure "Llvm_safe.IntegerType")
 end
 
 module FunctionType = struct
@@ -256,7 +191,7 @@ module FunctionType = struct
   let test ty = ty#classify = Llvm.TypeKind.Function
   let from ty =
     if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.FunctionType")
+    else raise (Cast_failure "Llvm_safe.FunctionType")
 end
 
 module StructType = struct
@@ -281,7 +216,7 @@ module StructType = struct
   let test ty = ty#classify = Llvm.TypeKind.Struct
   let from ty =
     if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.StructType")
+    else raise (Cast_failure "Llvm_safe.StructType")
 end
 
 module SequentialType = struct
@@ -302,7 +237,7 @@ module ArrayType = struct
   let test ty = ty#classify = Llvm.TypeKind.Array
   let from ty =
     if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.ArrayType")
+    else raise (Cast_failure "Llvm_safe.ArrayType")
 end
 
 module PointerType = struct
@@ -317,7 +252,7 @@ module PointerType = struct
   let test ty = ty#classify = Llvm.TypeKind.Pointer
   let from ty =
     if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.PointerType")
+    else raise (Cast_failure "Llvm_safe.PointerType")
 end
 
 module VectorType = struct
@@ -330,7 +265,7 @@ module VectorType = struct
   let test ty = ty#classify = Llvm.TypeKind.Vector
   let from ty =
     if test ty then new c ty#ptr
-    else raise (Cast_failure "Llvm.VectorType")
+    else raise (Cast_failure "Llvm_safe.VectorType")
 end
 
 module Value = struct
@@ -402,20 +337,20 @@ module Constant = struct
     method is_null = Llvm.is_null p
     method is_undef = Llvm.is_undef p
   end
+  let null ty = new c (Llvm.const_null ty#ptr)
+  let undef ty = new c (Llvm.undef ty#ptr)
   let test v = Llvm.is_constant v#ptr
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.Constant")
+    else raise (Cast_failure "Llvm_safe.Constant")
 end
 
-module ConstInt = struct
+module ConstantInt = struct
   type t = llvalue
   class c p = object
     inherit Constant.c p
     method int64_value = Llvm.int64_of_const p
   end
-  let null ty = new c (Llvm.const_null ty#ptr)
-  let undef ty = new c (Llvm.undef ty#ptr)
   let all_ones ty = new c (Llvm.const_all_ones ty#ptr)
   let of_int ty i = new c (Llvm.const_int ty#ptr i)
   let of_int64 ?(signext = false) ty i64 =
@@ -424,27 +359,23 @@ module ConstInt = struct
   let test (v : Value.c) = v#classify = Llvm.ValueKind.ConstantInt
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.ConstInt")
+    else raise (Cast_failure "Llvm_safe.ConstantInt")
 end
 
-module ConstReal = struct
+module ConstantFP = struct
   type t = llvalue
   class c p = object inherit Constant.c p end
-  let null ty = new c (Llvm.const_null ty#ptr)
-  let undef ty = new c (Llvm.undef ty#ptr)
   let of_float ty f = new c (Llvm.const_float ty#ptr f)
   let of_string ty s = new c (Llvm.const_float_of_string ty#ptr s)
   let test (v : Value.c) = v#classify = Llvm.ValueKind.ConstantFP
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.ConstReal")
+    else raise (Cast_failure "Llvm_safe.ConstantFP")
 end
 
-module ConstStruct = struct
+module ConstantStruct = struct
   type t = llvalue
   class c p = object inherit Constant.c p end
-  let null ty = new c (Llvm.const_null ty#ptr)
-  let undef ty = new c (Llvm.undef ty#ptr)
   let make ?(packed = false) ctx vals =
     let valps = Array.map (fun x -> x#ptr) vals in
       if not packed then new c (Llvm.const_struct ctx valps)
@@ -455,14 +386,12 @@ module ConstStruct = struct
   let test v = v#classify = Llvm.ValueKind.ConstantStruct
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.ConstStruct")
+    else raise (Cast_failure "Llvm_safe.ConstantStruct")
 end
 
-module ConstArray = struct
+module ConstantArray = struct
   type t = llvalue
   class c p = object inherit Constant.c p end
-  let null ty = new c (Llvm.const_null ty#ptr)
-  let undef ty = new c (Llvm.undef ty#ptr)
   let make ty vals =
     let valps = Array.map (fun x -> x#ptr) vals in
       new c (Llvm.const_array ty#ptr valps)
@@ -472,33 +401,31 @@ module ConstArray = struct
   let test v = v#classify = Llvm.ValueKind.ConstantArray
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.ConstArray")
+    else raise (Cast_failure "Llvm_safe.ConstantArray")
 end
 
-module ConstPointerNull = struct
+module ConstantPointerNull = struct
   type t = llvalue
   class c p = object inherit Constant.c p end
   let make ty = new c (Llvm.const_pointer_null ty#ptr)
   let test v = v#classify = Llvm.ValueKind.ConstantPointerNull
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.ConstPointerNull")
+    else raise (Cast_failure "Llvm_safe.ConstantPointerNull")
 end
 
-module ConstVector = struct
+module ConstantVector = struct
   type t = llvalue
   class c p = object inherit Constant.c p end
-  let null ty = new c (Llvm.const_null ty#ptr)
-  let undef ty = new c (Llvm.undef ty#ptr)
   let all_ones ty = new c (Llvm.const_all_ones ty#ptr)
   let make vals = new c (Llvm.const_vector (Array.map (fun x -> x#ptr) vals))
   let test v = v#classify = Llvm.ValueKind.ConstantVector
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.ConstVector")
+    else raise (Cast_failure "Llvm_safe.ConstantVector")
 end
 
-module ConstExpr = struct
+module ConstantExpr = struct
   type t = llvalue
   class c p = object
     inherit Constant.c p
@@ -577,7 +504,7 @@ module ConstExpr = struct
   let test v = v#classify = Llvm.ValueKind.ConstantExpr
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.ConstExpr")
+    else raise (Cast_failure "Llvm_safe.ConstantExpr")
 end
 
 module InlineAsm = struct
@@ -588,7 +515,7 @@ module InlineAsm = struct
   let test v = v#classify = Llvm.ValueKind.InlineAsm
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.InlineAsm")
+    else raise (Cast_failure "Llvm_safe.InlineAsm")
 end
 
 module MDNode = struct
@@ -654,7 +581,7 @@ module GlobalValue = struct
     | _ -> false
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.GlobalValue")
+    else raise (Cast_failure "Llvm_safe.GlobalValue")
 end
 
 module GlobalVariable = struct
@@ -689,7 +616,7 @@ module GlobalVariable = struct
   let test v = v#classify = Llvm.ValueKind.GlobalVariable
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.GlobalVariable")
+    else raise (Cast_failure "Llvm_safe.GlobalVariable")
 end
 
 module Function = struct
@@ -732,7 +659,7 @@ module Function = struct
   let test v = v#classify = Llvm.ValueKind.Function
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.Function")
+    else raise (Cast_failure "Llvm_safe.Function")
 end
 
 module GlobalAlias = struct
@@ -742,7 +669,7 @@ module GlobalAlias = struct
   let test v = v#classify = Llvm.ValueKind.GlobalAlias
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.GlobalAlias")
+    else raise (Cast_failure "Llvm_safe.GlobalAlias")
 end
 
 module Argument = struct
@@ -773,7 +700,7 @@ module Argument = struct
   let test v = v#classify = Llvm.ValueKind.Argument
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.Argument")
+    else raise (Cast_failure "Llvm_safe.Argument")
 end
 
 module BasicBlock = struct
@@ -808,7 +735,7 @@ module BasicBlock = struct
   let test v = Llvm.value_is_block v#ptr
   let from v =
     if test v then new c (Llvm.block_of_value v#ptr)
-    else raise (Cast_failure "Llvm.BasicBlock")
+    else raise (Cast_failure "Llvm_safe.BasicBlock")
 end
 
 module BlockAddress = struct
@@ -819,7 +746,7 @@ module BlockAddress = struct
   let test v = v#classify = Value.BlockAddress
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.BlockAddress")
+    else raise (Cast_failure "Llvm_safe.BlockAddress")
 end
 
 module Instruction = struct
@@ -859,7 +786,7 @@ module Instruction = struct
   let test v = match v#classify with Value.Instruction _ -> true | _ -> false
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.Instruction")
+    else raise (Cast_failure "Llvm_safe.Instruction")
 end
 
 module TerminatorInst = struct
@@ -876,7 +803,7 @@ module TerminatorInst = struct
     | _ -> false
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.TerminatorInst")
+    else raise (Cast_failure "Llvm_safe.TerminatorInst")
 end
 
 module CallInst = struct
@@ -896,7 +823,7 @@ module CallInst = struct
     | _ -> false
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.CallInst")
+    else raise (Cast_failure "Llvm_safe.CallInst")
 end
 
 module InvokeInst = struct
@@ -914,7 +841,7 @@ module InvokeInst = struct
     | _ -> false
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.InvokeInst")
+    else raise (Cast_failure "Llvm_safe.InvokeInst")
 end
 
 module PHINode = struct
@@ -934,7 +861,7 @@ module PHINode = struct
     | _ -> false
   let from v =
     if test v then new c v#ptr
-    else raise (Cast_failure "Llvm.PHINode")
+    else raise (Cast_failure "Llvm_safe.PHINode")
 end
 
 module Builder = struct

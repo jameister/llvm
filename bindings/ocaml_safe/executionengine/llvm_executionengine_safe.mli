@@ -25,7 +25,7 @@ module GenericValue: sig
   (** [of_float fpty n] boxes the float [n] in a float-valued generic value
       according to the floating point type [fpty]. See the fields
       [llvm::GenericValue::DoubleVal] and [llvm::GenericValue::FloatVal]. *)
-  val of_float : Llvm_safe.RealType.c -> float -> t
+  val of_float : Llvm_safe.Type.c -> float -> t
   
   (** [of_pointer v] boxes the pointer value [v] in a generic value. See the
       field [llvm::GenericValue::PointerVal]. *)
@@ -50,7 +50,7 @@ module GenericValue: sig
   (** [as_float fpty gv] unboxes the floating point-valued generic value [gv] of
       floating point type [fpty]. See the fields [llvm::GenericValue::DoubleVal]
       and [llvm::GenericValue::FloatVal]. *)
-  val as_float : Llvm_safe.RealType.c -> t -> float
+  val as_float : Llvm_safe.Type.c -> t -> float
   
   (** [as_pointer gv] unboxes the pointer-valued generic value [gv]. See the
       field [llvm::GenericValue::PointerVal]. *)
